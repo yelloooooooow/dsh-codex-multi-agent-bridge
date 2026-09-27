@@ -1,0 +1,12 @@
+# Attach this worker to the shared, persistent ChatGPT browser profile.
+- insert:
+    - id: bridge-browser-use
+      name: '../packages/browser-use/browser-use/lib/index.js'
+
+    - id: bridge-browser-playwright
+      name: '../packages/experimental/browser-use-playwright-mcp/lib/index.js'
+      inject: [browserUse, agents, tools, systemPrompt]
+      config:
+        mode: attach
+        endpoint: !!js process.env.DSH_BRIDGE_BROWSER_ENDPOINT
+        toolCallTimeoutMs: 300000

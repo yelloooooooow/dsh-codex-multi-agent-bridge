@@ -1,0 +1,5 @@
+# Add only the local Workspace-assignment route; the whale widget is untouched.
+- insert:
+    - id: codex-dsh-web-bridge
+      name: './web-bridge-plugin.mjs'
+      inject: [webServer, workspaceRegistry]

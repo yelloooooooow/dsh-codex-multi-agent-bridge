@@ -1,0 +1,5 @@
+# Keep the bridge title independent of its first task prompt.
+- insert:
+    - id: codex-dsh-bridge-session-label
+      name: './session-label-plugin.mjs'
+      inject: [sessionTitle]

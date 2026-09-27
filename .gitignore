@@ -1,0 +1,29 @@
+# Local credentials and environment overrides
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Dependency and build output
+node_modules/
+lib/
+dist/
+coverage/
+
+# Runtime state, logs, browser profiles, and locks
+.dsh/
+.codex/
+.codex-dsh-bridge/
+*.log
+*.lock
+events.jsonl
+state.json
+chatgpt-browser-profile/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

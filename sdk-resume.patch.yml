@@ -1,0 +1,4 @@
+- id: sdk-jsonrpc-server
+  config:
+    maxTokensAsSuccess: false
+    resumeExistingSessions: true

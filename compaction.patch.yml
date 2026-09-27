@@ -1,0 +1,11 @@
+# Keep the minimal worker tool set while bounding the cost of a long conversation.
+- insert:
+    - id: token-meter
+      name: '@deepseek-ai/dsh-token-meter'
+
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+      config:
+        thresholdRatio: !!js Number(process.env.DSH_BRIDGE_COMPACTION_THRESHOLD ?? 0.04)
+        retainRatio: !!js Number(process.env.DSH_BRIDGE_COMPACTION_RETAIN ?? 0.01)
+        maxTokens: !!js Number(process.env.DSH_BRIDGE_COMPACTION_MAX_TOKENS ?? 2048)

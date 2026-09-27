@@ -1,0 +1,5 @@
+# Serialize only shared ChatGPT UI consultations across parallel bridge lanes.
+- insert:
+    - id: bridge-advisor-ui-lease
+      name: './advisor-ui-lease-plugin.mjs'
+      inject: [tools, session]

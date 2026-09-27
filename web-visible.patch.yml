@@ -1,0 +1,5 @@
+# Match the existing Web profile's durable session format when sharing its home.
+- id: sessions
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: zstd

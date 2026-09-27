@@ -1,0 +1,8 @@
+# Expose the host desktop so the worker can continue its named ChatGPT app conversation.
+- insert:
+    - id: bridge-computer-use
+      name: '../packages/computer-use/computer-use/lib/index.js'
+
+    - id: bridge-computer-use-native
+      name: '../packages/experimental/computer-use-cua-driver-native/lib/index.js'
+      inject: [computerUse, tools, systemPrompt]
