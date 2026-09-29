@@ -21,6 +21,7 @@ coverage/
 events.jsonl
 state.json
 chatgpt-browser-profile/
+.playwright-mcp/
 
 # Editor and operating-system files
 .idea/

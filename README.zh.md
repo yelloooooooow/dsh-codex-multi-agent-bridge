@@ -15,6 +15,8 @@
 ```powershell
 cd C:\work\deepseek-harness
 git clone https://github.com/yelloooooooow/dsh-codex-multi-agent-bridge.git
+cd .\dsh-codex-multi-agent-bridge
+npm install --ignore-scripts
 ```
 
 桥接器不会安装或复制凭据。运行状态、Session 日志、控制 token 和浏览器 profile 保存在当前 Windows 用户的主目录下，并被本仓库的 `.gitignore` 排除。这些本地记录可能包含提示词、源码片段、命令输出、文件路径和 ChatGPT 消息；未经检查，不要把它们附加到公开 issue。
@@ -28,6 +30,18 @@ git clone https://github.com/yelloooooooow/dsh-codex-multi-agent-bridge.git
 ChatGPT 网页版使用位于 `~/.codex-dsh-bridge/chatgpt-browser-profile` 的专用 Edge 或 Chrome profile。只需在该窗口登录一次。网页和应用路线都会继续 lane 对应的 `桥接对话 · <workspace> · <lane>`，不会每次咨询新建对话。
 
 启动器会把每个 DSH Session 放入工作区对应的 DSH Web 分组，标题为 `桥接对话 · <lane>`。本地 Web patch 不修改鲸鱼挂件。bridge 正在运行时，请把对应 DSH Web Session 当作只读，避免手动消息与协调器竞争写入。
+
+## Codex 到 ChatGPT
+
+Codex Desktop 内置了[用于其内置浏览器的 Computer Use](https://learn.chatgpt.com/docs/browser#computer-use-in-the-browser)，但仅有浏览器能力并不等于包含 lane 隔离、回复捕获和审计记录的持久 ChatGPT 顾问对话。本项目通过 `consult_chatgpt` MCP 工具提供这套完整的本地闭环。
+
+双击 `Install Codex ChatGPT Bridge.cmd`，然后新建 Codex 对话或重启 Codex。安装器不会把凭据写入 Codex 配置：它只安装依赖，并把 `codex-chatgpt-mcp.mjs` 的绝对路径以本地 MCP 名称 `dsh_chatgpt_advisor` 注册。
+
+需要额外判断时，让 Codex 咨询 ChatGPT。工具接受 `web`、`app` 和 `auto`。三种选项都通过一个独立且已登录的网页版界面执行；`app` 会记录预期展示界面是 Windows 应用。这是有意设计：[当前统一桌面应用](https://help.openai.com/en/articles/20001276-moving-to-the-new-chatgpt-desktop-app)在同一个主窗口里承载 ChatGPT 和正在运行的 Codex 回合，同步操作应用会替换调用工具的当前页面。当网页版和应用使用同一账号及工作区时，这个持久云端对话会出现在 Windows 应用的“最近”中，并保留完整记录。
+
+每个 Codex 对话必须复用一个简短 lane 名称；并发的 Codex 对话使用不同 lane。桥接器为这些 lane 添加 `codex-` 前缀，继续对应的命名 ChatGPT 对话，并复用 DSH 发起咨询时使用的跨进程 UI 租约。结果会同时报告请求的 transport 和实际 delivery surface，因此不会把 `app` 误报成直接桌面 UI 自动化。
+
+Codex 发送一个聚焦问题和可选的精简上下文。低推理强度的 DSH relay 操作网页版 UI，等待完整回复，把完整工具轨迹保存到自己的 DSH Session，并把精简答案、对话标识和 Session 标识返回 Codex。每次咨询会增加一个 DSH relay 回合；Codex 不会把之前的完整 transcript 复制到 ChatGPT。DSH 发起的 `chatgpt-app` job 仍可通过统一启动器使用，因为它不会同步替换自己的 Codex 调用页面。
 
 也可以继续使用命令行：
 
@@ -64,7 +78,7 @@ ChatGPT 网页版和 Windows 应用是共享 UI 资源。worker 会为完整的�
 
 状态默认位于 `~/.codex-dsh-bridge/<workspace-id>-lane-<lane>/`；`main` lane 为兼容性保留原来的纯工作区路径。状态文件包含对话标识和路由历史，但不包含 API key。桥接器读取 `DEEPSEEK_API_KEY` 或现有 DSH 凭据引用，而且不会打印它。
 
-worker 使用 `sdk-minimal`、`deepseek-v4-flash`、低推理强度、token 计量和自动压缩。只有选中的 UI provider 会被挂载，因此未使用的浏览器或桌面工具目录不会增加 token。桥接器在 agent 之间发送精简检查点增量，同时保留原始记录，而不会复制完整 transcript。默认没有轮次上限。
+worker 使用 `sdk-minimal`、`deepseek-v4-flash`、低推理强度、token 计量和自动压缩。只有选中的 UI provider 会被挂载，因此未使用的浏览器或桌面工具目录不会增加 token。桥接器在 agent 之间发送精简检查点增量，同时保留原始记录，而不会复制完整 transcript。普通 bridge job 默认没有轮次上限；每次 Codex MCP 调用都是一个带可配置超时的有界顾问请求。
 
 ## 失败行为与安全性
 

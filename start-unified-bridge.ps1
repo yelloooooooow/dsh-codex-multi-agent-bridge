@@ -93,7 +93,11 @@ if ($advisors.Contains('chatgpt-web')) {
   }
 }
 if ($advisors.Contains('chatgpt-app')) {
-  Write-Host 'Keep the ChatGPT Windows app signed in and available on this desktop.'
+  & "$PSScriptRoot\ensure-chatgpt-app.ps1"
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error 'The ChatGPT Windows app could not be prepared.'
+    exit $LASTEXITCODE
+  }
 }
 
 $task = Read-Host 'Task (leave blank to resume this lane)'

@@ -1,0 +1,19 @@
+{
+  "name": "dsh-codex-multi-agent-bridge",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "check": "node --check bridge.mjs && node --check codex-chatgpt-mcp.mjs",
+    "test": "node --test bridge-state.test.mjs codex-chatgpt-mcp.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "js-yaml": "4.3.2",
+    "zod": "4.4.3"
+  }
+}

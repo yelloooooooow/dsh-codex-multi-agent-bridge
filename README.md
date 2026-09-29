@@ -15,6 +15,8 @@ Clone this repository as a direct child of the Harness checkout so its parent di
 ```powershell
 cd C:\work\deepseek-harness
 git clone https://github.com/yelloooooooow/dsh-codex-multi-agent-bridge.git
+cd .\dsh-codex-multi-agent-bridge
+npm install --ignore-scripts
 ```
 
 The bridge does not install or copy credentials. Runtime state, Session logs, control tokens, and the browser profile stay under the current Windows user's home directory and are excluded by this repository's `.gitignore`. Those local records can contain prompts, source excerpts, command output, file paths, and ChatGPT messages; do not attach them to public issues without review.
@@ -28,6 +30,18 @@ Choose `1,2,3` or `all` to enable every route. A later launch may change the adv
 ChatGPT Web uses a dedicated Edge or Chrome profile at `~/.codex-dsh-bridge/chatgpt-browser-profile`. Sign in once in that window. Web and app routes continue the lane's conversation named `桥接对话 · <workspace> · <lane>` instead of opening one conversation per consultation.
 
 The launcher stores each DSH Session in the workspace's DSH Web group with the title `桥接对话 · <lane>`. The local Web patch does not modify the whale widget. Treat an active bridge Session as read-only in DSH Web so manual messages do not race the coordinator.
+
+## Codex to ChatGPT
+
+Codex Desktop includes [Computer Use for its built-in browser](https://learn.chatgpt.com/docs/browser#computer-use-in-the-browser), but that browser capability alone does not provide a persistent ChatGPT adviser conversation with lane isolation, reply capture, and audit records. This project exposes that complete local loop as the `consult_chatgpt` MCP tool.
+
+Double-click `Install Codex ChatGPT Bridge.cmd`, then start a new Codex conversation or restart Codex. The installer keeps credentials out of Codex configuration: it installs dependencies and registers only the absolute path of `codex-chatgpt-mcp.mjs` under the local MCP name `dsh_chatgpt_advisor`.
+
+Ask Codex to consult ChatGPT when another judgment is useful. The tool accepts `web`, `app`, and `auto`. All three use an isolated signed-in Web surface for execution; `app` records that the intended presentation surface is the Windows app. This is deliberate: the [current unified desktop app](https://help.openai.com/en/articles/20001276-moving-to-the-new-chatgpt-desktop-app) hosts ChatGPT and the active Codex turn in one main window, so synchronous app automation would replace the page that is invoking the tool. When Web and the app use the same account and workspace, the persistent cloud conversation appears in the Windows app's Recents with its complete transcript.
+
+Each Codex conversation must reuse one short lane name, while concurrent Codex conversations use different lanes. The bridge prefixes these lanes with `codex-`, continues the corresponding named ChatGPT conversation, and uses the same cross-process UI leases as DSH-originated consultations. The result reports the requested transport and the actual delivery surface, so `app` is never presented as direct desktop UI automation.
+
+Codex sends one focused question and optional compact context. A low-effort DSH relay operates the Web UI, waits for the complete response, stores the full tool trace in its DSH Session, and returns a compact answer plus the conversation and Session identifiers to Codex. This adds one DSH relay turn to each consultation; Codex does not copy the complete prior transcript into ChatGPT. DSH-originated `chatgpt-app` jobs remain available through the unified launcher because they do not synchronously replace their own Codex caller.
 
 Command-line use remains available:
 
@@ -64,7 +78,7 @@ Every DSH report is a durable incremental checkpoint with facts, decisions, assu
 
 State defaults to `~/.codex-dsh-bridge/<workspace-id>-lane-<lane>/`; the `main` lane retains the original workspace-only path for compatibility. State files contain conversation identifiers and routing history but no API keys. The bridge reads `DEEPSEEK_API_KEY` or the existing DSH credential reference without printing it.
 
-The worker uses `sdk-minimal`, `deepseek-v4-flash`, low reasoning, token metering, and automatic compaction. Only selected UI providers are mounted, so an unused browser or desktop tool catalog adds no tokens. The bridge sends compact checkpoint deltas between agents and keeps the raw record available instead of copying the full transcript. There is no default turn limit.
+The worker uses `sdk-minimal`, `deepseek-v4-flash`, low reasoning, token metering, and automatic compaction. Only selected UI providers are mounted, so an unused browser or desktop tool catalog adds no tokens. The bridge sends compact checkpoint deltas between agents and keeps the raw record available instead of copying the full transcript. There is no default turn limit for normal bridge jobs; each Codex MCP call is one bounded adviser request with a configurable timeout.
 
 ## Failure behavior and safety
 
