@@ -15,13 +15,12 @@ import {
 } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import yaml from 'js-yaml'
-
-import { DeepSeekHarness } from '../packages/sdk/client/lib/index.js'
+import { atomicJson } from './workflow-control.mjs'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = resolve(SCRIPT_DIR, '..')
+const REPO_ROOT = resolve(process.env.DSH_HARNESS_ROOT ?? resolve(SCRIPT_DIR, '..'))
 const WEB_CONTROL_TOKEN_PATH = join(homedir(), '.codex-dsh-bridge', 'web-control-token')
 const ADVISORS = new Set(['codex', 'chatgpt-web', 'chatgpt-app'])
 const SUPERVISOR_SCHEMA = {
@@ -40,7 +39,8 @@ Work directly in the assigned workspace and carry out as much of the instruction
 Before changing a file, read and follow only the AGENTS.md or CLAUDE.md files that govern that file: start at the workspace root and follow the directory path to the file's parent. Do not recursively scan unrelated directories for instructions.
 Do not stop for routine implementation choices. Fix low-risk, reversible command mistakes and transient failures yourself. Do not claim success without concrete evidence.
 Never delete multiple files or directories. Never reveal credentials or secret values.
-Immediately request the supervisor when the goal or acceptance criteria are unclear; evidence contradicts your assumptions or plan; the method, architecture, or interpretation must materially change; an action may be destructive, irreversible, external, security-sensitive, privacy-sensitive, or high-impact; credentials or permissions are involved; unexpected files, state, or out-of-scope failures appear; multiple plausible paths have materially different outcomes; confidence is too low; an approach repeatedly fails; you discover that an earlier result may be wrong; or an error could propagate into serious consequences.
+Own the complete assigned package: implementation, routine repair, execution, monitoring, collection, and one substantive result report. Save ordinary progress in the checkpoint rather than asking for step-by-step supervision. Existing authorization for routine reversible work and established SSH paths remains valid. Ordinary executor, path, quoting, and tool-discovery failures are yours to diagnose and repair through supported authorized routes. A genuine quota, approval or security denial must not be bypassed.
+Immediately request the supervisor when the goal or acceptance criteria are unclear; evidence contradicts the scientific or technical plan; the method, architecture, interpretation or agreed budget must materially change; an action needs new destructive, irreversible, external, security-sensitive or high-impact authority; an earlier result may be wrong; or a concrete blocker remains after a targeted repair. Preserve the running jobs and exact error evidence. Do not repeatedly ask for already granted routine permissions.
 Do not suppress, bypass, or silently work around a semantic error. Report it when it needs judgment. When no new judgment is needed, continue autonomously and state the next action you will take.
 Treat every report as a durable incremental checkpoint. Record every new material fact, decision, assumption, risk, and open question since the previous report; use empty arrays when a category has no new entries.
 Your final response must be exactly one JSON object with no Markdown outside it:
@@ -515,8 +515,8 @@ function readState(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
-function saveState(path, state) {
-  writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+async function saveState(path, state) {
+  await atomicJson(path, state)
 }
 
 function appendEvent(path, event) {
@@ -893,7 +893,7 @@ async function main() {
   state.codexThreadBinding ??= options.codexThreadBinding
   state.advisorHistory ??= []
   state.advisorHistory.push({ jobNumber: state.jobNumber, resumed: options.resume, advisors: state.advisors })
-  saveState(statePath, state)
+  await saveState(statePath, state)
 
   const audit = {
     eventsPath,
@@ -911,6 +911,7 @@ async function main() {
     releaseLock()
     throw error
   }
+  const { DeepSeekHarness } = await import(pathToFileURL(join(REPO_ROOT, 'packages/sdk/client/lib/index.js')).href)
   const harness = new DeepSeekHarness({
     dshBin: join(REPO_ROOT, 'apps', 'cli', 'lib', 'bin.js'),
     profile: 'sdk-minimal',
@@ -985,7 +986,7 @@ async function main() {
       )
       state.status = 'supervising'
       delete state.error
-      saveState(statePath, state)
+      await saveState(statePath, state)
       console.log(`[bridge] supervisor thread=${state.codexThreadId}`)
       console.log(`[bridge] supervisor binding=${state.codexThreadBinding ?? 'saved-or-explicit'}`)
     }
@@ -999,7 +1000,7 @@ async function main() {
         effort: options.codexEffort,
       })
       state.unreviewedWorkerReports = []
-      saveState(statePath, state)
+      await saveState(statePath, state)
     } else if (usesCodex && state.lastWorkerReport) {
       if (state.lastWorkerReport.terminal === false && state.lastWorkerReport.needsSupervisor === false) {
         decision = {
@@ -1020,7 +1021,7 @@ async function main() {
           effort: options.codexEffort,
         })
         state.unreviewedWorkerReports = []
-        saveState(statePath, state)
+        await saveState(statePath, state)
       }
     } else if (usesCodex) {
       decision = await codex.turn({
@@ -1051,7 +1052,7 @@ async function main() {
         state.status = 'completed'
         state.result = decision.rationale
         delete state.pendingInstruction
-        saveState(statePath, state)
+        await saveState(statePath, state)
         console.log(`[bridge] COMPLETE: ${decision.rationale}`)
         break
       }
@@ -1072,7 +1073,7 @@ async function main() {
         state.status = 'aborted'
         state.result = decision.rationale
         delete state.pendingInstruction
-        saveState(statePath, state)
+        await saveState(statePath, state)
         console.log(`[bridge] ABORT: ${decision.rationale}`)
         process.exitCode = 2
         break
@@ -1083,7 +1084,7 @@ async function main() {
       if (options.maxCycles !== undefined && state.cycles - state.jobCycleStart >= options.maxCycles) {
         state.status = 'cycle-limit'
         state.result = `Stopped after ${options.maxCycles} worker turns`
-        saveState(statePath, state)
+        await saveState(statePath, state)
         console.log(`[bridge] STOPPED: ${state.result}`)
         process.exitCode = 3
         break
@@ -1091,7 +1092,7 @@ async function main() {
 
       state.pendingInstruction = decision.instruction
       state.status = 'working'
-      saveState(statePath, state)
+      await saveState(statePath, state)
       console.log(`[bridge] DSH turn ${state.cycles + 1}: ${decision.instruction.slice(0, 240)}`)
       const run = await harness.run(workerPrompt(decision.instruction, {
         includeProtocol: !state.workerProtocolSent,
@@ -1115,18 +1116,18 @@ async function main() {
       addDshUsage(state, usage)
       state.status = `worker:${worker.event}`
       delete state.pendingInstruction
-      saveState(statePath, state)
+      await saveState(statePath, state)
       appendEvent(eventsPath, { source: 'dsh', cycle: state.cycles, usage, report: worker })
       console.log(`[bridge] DSH ${worker.event} (${usage.totalTokens} tokens): ${worker.summary || worker.question}`)
 
       if (state.webVisible) {
         try {
           await groupWebSession(state)
-          saveState(statePath, state)
+          await saveState(statePath, state)
           console.log(`[bridge] Web workspace=${state.webWorkspaceId}`)
         } catch (error) {
           state.webGroupingError = error instanceof Error ? error.message : String(error)
-          saveState(statePath, state)
+          await saveState(statePath, state)
           console.warn(`[bridge] Web grouping unavailable: ${state.webGroupingError}`)
         }
       }
@@ -1154,7 +1155,7 @@ async function main() {
             effort: options.codexEffort,
           })
           state.unreviewedWorkerReports = []
-          saveState(statePath, state)
+          await saveState(statePath, state)
           decisionSource = 'codex'
         } else if (worker.terminal) {
           decision = bridgeManagedDecision(state, options.resumeNote)
@@ -1162,7 +1163,7 @@ async function main() {
         } else {
           state.status = 'waiting-user'
           state.result = worker.question || worker.summary || 'The worker needs human input.'
-          saveState(statePath, state)
+          await saveState(statePath, state)
           console.log(`[bridge] WAITING FOR USER: ${state.result}`)
           process.exitCode = 4
           break
@@ -1180,7 +1181,7 @@ async function main() {
   } catch (error) {
     state.status = 'crashed'
     state.error = error instanceof Error ? error.message : String(error)
-    saveState(statePath, state)
+    await saveState(statePath, state)
     throw error
   } finally {
     await Promise.allSettled([harness.close(), codex?.close()])

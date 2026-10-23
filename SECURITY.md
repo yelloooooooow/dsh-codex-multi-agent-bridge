@@ -1,5 +1,7 @@
 # Security
 
+The opt-in native workflow reads the current user's local Harness BrowserAuth credential in memory and only sends it to a configured loopback origin. Workflow configuration and delivery adapters are trusted local code: protect them like scripts with your user permissions. Reports, goal history, outbox records and logs may contain private project information; keep their state directories outside source control. A transport's acceptance is not a receiver or analysis acknowledgement. Do not clear real denials or blindly resend ambiguous side effects. The generic watcher does not patch official plugins, restart the desktop app or bypass quota/approval decisions.
+
 ## Reporting a vulnerability
 
 Do not include credentials, private prompts, Session logs, browser profiles, or other sensitive data in a public issue. Report a vulnerability through GitHub's private security-advisory feature for this repository.

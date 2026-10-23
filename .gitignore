@@ -22,6 +22,10 @@ events.jsonl
 state.json
 chatgpt-browser-profile/
 .playwright-mcp/
+.test-output/
+workflow-logs/
+local-workflow-state/
+workflow.local.json
 
 # Editor and operating-system files
 .idea/
