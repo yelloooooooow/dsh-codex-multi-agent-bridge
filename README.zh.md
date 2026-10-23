@@ -8,6 +8,10 @@
 
 ## 安装
 
+长时间多 worker 任务推荐先读[整包负责、原生 goal 与事件接续工作流](docs/WORKFLOW.zh.md)。新增可选 `workflow.mjs` 将完整指示保存到已登记的 DSH Web Session，按指定依赖休眠/唤醒、补登记完成报告，并区分传输接收与真正分析完成；人工暂停和真实额度/审批阻塞会保留。可选通知适配器接入已经验证的 Codex 发送入口；没有适配器时只保证本地持久登记。原咨询启动器仍可使用，同一 Session 不要同时由两套协调器调度。
+
+指南包含完整任务模板、CLI、goal 压缩、dsh-ops 结合方式与重启边界。[English guide](docs/WORKFLOW.md)。离线测试不再要求相邻目录已有编译完成的 Harness；运行旧 bridge 仍需要它，可用 `DSH_HARNESS_ROOT` 为 `bridge.mjs` 指定实际编译目录。
+
 使用本项目之前，请安装 Node.js 24 或 22.19+，克隆并构建 DeepSeek Harness，然后配置其 DeepSeek 凭据。Codex 模式还需要已经登录的 `codex` CLI；ChatGPT 模式需要已经登录的 ChatGPT 网页版或 Windows 应用。
 
 请把本仓库克隆为 Harness checkout 的直接子目录，使其父目录包含 `apps/`、`packages/` 和已经构建的 `apps/cli/lib/bin.js`：

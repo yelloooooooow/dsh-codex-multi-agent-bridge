@@ -1,0 +1,9 @@
+{
+  "workspace": "./workspace",
+  "stateDir": "./local-workflow-state",
+  "autoResumeOwnedGoals": true,
+  "web": { "baseUrl": "http://127.0.0.1:3080", "timeoutMs": 30000 },
+  "workers": {
+    "worker-1": { "sessionId": "REPLACE_WITH_EXISTING_DSH_SESSION_ID" }
+  }
+}

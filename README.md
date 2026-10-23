@@ -6,6 +6,12 @@ The bridge keeps persistent DeepSeek Harness workers connected to any combinatio
 
 This is an experimental, independent companion project for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), not an official DeepSeek release. It targets Windows and loads packages from an adjacent built Harness source checkout.
 
+## Recommended workflow for long-running packages
+
+Use [whole-package ownership, native goals and an event watcher](docs/WORKFLOW.md) for unattended multi-worker work. The opt-in `workflow.mjs` CLI persists complete instructions in registered DSH Web Sessions, sleeps on declared dependencies, recovers completion reports, and separates transport receipt from actual result analysis. It preserves manual pauses and real quota/approval blocks. Optional notification adapters connect your verified Codex sender; no adapter means durable local publication only. The existing adviser launcher below remains available; do not drive one Session with both coordinators.
+
+The [Chinese workflow guide](docs/WORKFLOW.zh.md) includes the delegation template, CLI commands, compaction rules, dsh-ops integration and restart limits. Offline tests can run without an adjacent built Harness checkout; running the legacy bridge still needs it. `DSH_HARNESS_ROOT` can explicitly select a built checkout for `bridge.mjs`.
+
 ## Install
 
 Install Node.js 24 or 22.19+, clone and build DeepSeek Harness, and configure its DeepSeek credential before using this project. Codex mode also requires an authenticated `codex` CLI. ChatGPT modes require a signed-in ChatGPT Web session or Windows app.
